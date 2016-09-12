@@ -215,6 +215,7 @@ class Builder extends TestMethodProvider
     {
         $this->validateAndAddMethodType(self::METHOD_TYPE_CHARACTER, self::METHOD_TYPES_ALLOWED_FOR_CHARACTERS | self::METHOD_TYPE_NEGATE);
         
+        return $this->add($this->getRange($min, $max));
     }
 
     /**
@@ -240,6 +241,7 @@ class Builder extends TestMethodProvider
     {
         $this->validateAndAddMethodType(self::METHOD_TYPE_CHARACTER, self::METHOD_TYPES_ALLOWED_FOR_CHARACTERS | self::METHOD_TYPE_NEGATE);
         
+        return $this->add($this->getRange($min, $max));
     }
 
     /**********************************************************/
@@ -388,6 +390,7 @@ class Builder extends TestMethodProvider
         $this->validateAndAddMethodType(self::METHOD_TYPE_QUANTIFIER, self::METHOD_TYPES_ALLOWED_FOR_CHARACTERS);
         
         if (!$conditions) {
+            return $this->negateNextRange();
         }
         
         return $this->addClosure(new Not, $conditions);
@@ -705,6 +708,7 @@ class Builder extends TestMethodProvider
         return $regEx;
     }
     
+    protected function getRange($min, $max) : string
     {
         $group = "";
         
@@ -718,6 +722,7 @@ class Builder extends TestMethodProvider
         return $group;
     }
 
+    protected function negateNextRange()
     {
         $this->isNegative = true;
         return $this;
