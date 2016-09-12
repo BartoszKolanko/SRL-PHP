@@ -8,6 +8,7 @@ use SRL\Builder\Capture;
 use SRL\Builder\NegativeLookahead;
 use SRL\Builder\NegativeLookbehind;
 use SRL\Builder\NonCapture;
+use SRL\Builder\Not;
 use SRL\Builder\Optional;
 use SRL\Builder\PositiveLookahead;
 use SRL\Builder\PositiveLookbehind;
@@ -38,12 +39,13 @@ use SRL\Interfaces\TestMethodProvider;
 class Builder extends TestMethodProvider
 {
     const NON_LITERAL_CHARACTERS = '[\\^$.|?*+()';
-    const METHOD_TYPE_BEGIN = 0b00001;
-    const METHOD_TYPE_CHARACTER = 0b00010;
-    const METHOD_TYPE_GROUP = 0b00100;
-    const METHOD_TYPE_QUANTIFIER = 0b01000;
-    const METHOD_TYPE_ANCHOR = 0b10000;
-    const METHOD_TYPE_UNKNOWN = 0b11111;
+    const METHOD_TYPE_BEGIN = 0b000001;
+    const METHOD_TYPE_CHARACTER = 0b000010;
+    const METHOD_TYPE_GROUP = 0b000100;
+    const METHOD_TYPE_QUANTIFIER = 0b001000;
+    const METHOD_TYPE_ANCHOR = 0b010000;
+    const METHOD_TYPE_NEGATE = 0b100000;
+    const METHOD_TYPE_UNKNOWN = 0b111111;
     const METHOD_TYPES_ALLOWED_FOR_CHARACTERS = self::METHOD_TYPE_BEGIN | self::METHOD_TYPE_ANCHOR | self::METHOD_TYPE_GROUP | self::METHOD_TYPE_QUANTIFIER | self::METHOD_TYPE_CHARACTER;
 
     /** @var string[] RegEx being built. */
@@ -130,6 +132,9 @@ class Builder extends TestMethodProvider
     /** @var string String to implode with. */
     protected $implodeString = '';
 
+    /** @var bool Negate next statement. */
+    protected $isNegative = false;
+
     /**********************************************************/
     /*                     CHARACTERS                         */
     /**********************************************************/
@@ -208,9 +213,8 @@ class Builder extends TestMethodProvider
      */
     public function digit(int $min = 0, int $max = 9) : self
     {
-        $this->validateAndAddMethodType(self::METHOD_TYPE_CHARACTER, self::METHOD_TYPES_ALLOWED_FOR_CHARACTERS);
-
-        return $this->add("[$min-$max]");
+        $this->validateAndAddMethodType(self::METHOD_TYPE_CHARACTER, self::METHOD_TYPES_ALLOWED_FOR_CHARACTERS | self::METHOD_TYPE_NEGATE);
+        
     }
 
     /**
@@ -234,9 +238,8 @@ class Builder extends TestMethodProvider
      */
     public function letter(string $min = 'a', string $max = 'z') : self
     {
-        $this->validateAndAddMethodType(self::METHOD_TYPE_CHARACTER, self::METHOD_TYPES_ALLOWED_FOR_CHARACTERS);
-
-        return $this->add("[$min-$max]");
+        $this->validateAndAddMethodType(self::METHOD_TYPE_CHARACTER, self::METHOD_TYPES_ALLOWED_FOR_CHARACTERS | self::METHOD_TYPE_NEGATE);
+        
     }
 
     /**********************************************************/
@@ -373,6 +376,21 @@ class Builder extends TestMethodProvider
         }
 
         return $this->addClosure($builder, $conditions);
+    }
+	
+    /**
+     * Negate next group.
+     *
+     * @return Builder
+     */
+    public function not($conditions = null) : self
+    {
+        $this->validateAndAddMethodType(self::METHOD_TYPE_QUANTIFIER, self::METHOD_TYPES_ALLOWED_FOR_CHARACTERS);
+        
+        if (!$conditions) {
+        }
+        
+        return $this->addClosure(new Not, $conditions);
     }
 
     /**********************************************************/
@@ -686,8 +704,24 @@ class Builder extends TestMethodProvider
 
         return $regEx;
     }
+    
+    {
+        $group = "";
+        
+        if ($this->isNegative) {
+            $this->isNegative = false;
+            $group = "[^$min-$max]";
+        } else {
+            $group = "[$min-$max]";
+        }
+        
+        return $group;
+    }
 
-
+    {
+        $this->isNegative = true;
+        return $this;
+    }
 
     /**********************************************************/
     /*                     MAGIC METHODS                      */

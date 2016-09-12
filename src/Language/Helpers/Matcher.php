@@ -50,6 +50,7 @@ class Matcher
         'until' => ['class' => Methods\DefaultMethod::class, 'method' => 'until'],
         'raw' => ['class' => Methods\DefaultMethod::class, 'method' => 'raw'],
         'one of' => ['class' => Methods\DefaultMethod::class, 'method' => 'oneOf'],
+        'not' => ['class' => Methods\DefaultMethod::class, 'method' => 'not'],
 
         'digit from' => ['class' => Methods\ToMethod::class, 'method' => 'digit'],
         'number from' => ['class' => Methods\ToMethod::class, 'method' => 'digit'],
@@ -81,7 +82,6 @@ class Matcher
     public function match(string $part) : Method
     {
         $maxMatchCount = 0;
-
         // Go through each mapper and check if the name matches. Then, take the highest match to avoid matching
         // 'any', if 'any character' was given, and so on.
         foreach ($this->mapper as $key => $value) {
