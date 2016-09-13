@@ -54,6 +54,7 @@ class Matcher
         'until' => ['class' => Methods\DefaultMethod::class, 'method' => 'until'],
         'raw' => ['class' => Methods\DefaultMethod::class, 'method' => 'raw'],
         'one of' => ['class' => Methods\DefaultMethod::class, 'method' => 'oneOf'],
+        'not one of' => ['class' => Methods\DefaultMethod::class, 'method' => 'notOneOf'],
 
         'digit from' => ['class' => Methods\ToMethod::class, 'method' => 'digit'],
         'not digit from' => ['class' => Methods\ToMethod::class, 'method' => 'notDigit'],

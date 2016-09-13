@@ -50,6 +50,9 @@ class LanguageInterpreterTest extends TestCase
 
         $srl = new SRL('starts with not letter, not uppercase letter, not letter from f to o, not uppercase letter from O to z');
         $this->assertEquals('/^[^a-z][^A-Z][^f-o][^O-z]/', $srl->get());
+
+        $srl = new SRL('starts with not one of "!@#/"');
+        $this->assertEquals('/^[^!@#\/]/', $srl->get());
     }
 
     public function testEmail()

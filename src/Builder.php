@@ -165,10 +165,26 @@ class Builder extends TestMethodProvider
     {
         $this->validateAndAddMethodType(self::METHOD_TYPE_CHARACTER, self::METHOD_TYPES_ALLOWED_FOR_CHARACTERS);
 
-        $chars = implode('', array_map([$this, 'escape'], str_split($chars)));
-        $chars = str_replace(['-', ']'], ['\\-', '\\]'], $chars);
+        $chars = $this->escape($chars);
+        $chars = $this->escapeRangeSpecyficChars($chars);
 
         return $this->add('[' . $chars . ']');
+    }
+
+    /**
+     * Literally match anything but one of these characters.
+     *
+     * @param string $chars
+     * @return Builder
+     */
+    public function notOneOf(string $chars)
+    {
+        $this->validateAndAddMethodType(self::METHOD_TYPE_CHARACTER, self::METHOD_TYPES_ALLOWED_FOR_CHARACTERS);
+
+        $chars = $this->escape($chars);
+        $chars = $this->escapeRangeSpecyficChars($chars);
+
+        return $this->add('[^' . $chars . ']');
     }
 
     /**
@@ -181,7 +197,7 @@ class Builder extends TestMethodProvider
     {
         $this->validateAndAddMethodType(self::METHOD_TYPE_CHARACTER, self::METHOD_TYPES_ALLOWED_FOR_CHARACTERS);
 
-        return $this->add('(?:' . implode('', array_map([$this, 'escape'], str_split($chars))) . ')');
+        return $this->add('(?:' . $this->escape($chars) . ')');
     }
 
 
@@ -550,12 +566,23 @@ class Builder extends TestMethodProvider
     /**********************************************************/
 
     /**
+     * Escape all characters in string.
+     *
+     * @param string $chars
+     * @return string
+     */
+    protected function escape(string $chars)
+    {
+        return implode('', array_map([$this, 'escapeChar'], str_split($chars)));
+    }
+
+    /**
      * Escape specific character.
      *
      * @param string $char
      * @return string
      */
-    protected function escape(string $char)
+    protected function escapeChar(string $char)
     {
         return (strpos(static::NON_LITERAL_CHARACTERS, $char) !== false ? '\\' : '') . $char;
     }
@@ -565,6 +592,12 @@ class Builder extends TestMethodProvider
      *
      * @return string
      */
+    
+    protected function escapeRangeSpecyficChars(string $chars)
+    {
+        return str_replace(['-', ']'], ['\\-', '\\]'], $chars);
+    }
+
     protected function getRawRegex() : string
     {
         return sprintf($this->group, implode($this->implodeString, $this->regEx));
