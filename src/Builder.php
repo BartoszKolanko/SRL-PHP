@@ -214,6 +214,20 @@ class Builder extends TestMethodProvider
     }
 
     /**
+     * Match anything but digit (in given span). Default will be a digit between 0 and 9.
+     *
+     * @param int $min
+     * @param int $max
+     * @return Builder
+     */
+    public function notDigit(int $min = 0, int $max = 9) : self
+    {
+        $this->validateAndAddMethodType(self::METHOD_TYPE_CHARACTER, self::METHOD_TYPES_ALLOWED_FOR_CHARACTERS);
+
+        return $this->add("[^$min-$max]");
+    }
+
+    /**
      * Match any uppercase letter (between A to Z).
      *
      * @param string $min
@@ -237,6 +251,32 @@ class Builder extends TestMethodProvider
         $this->validateAndAddMethodType(self::METHOD_TYPE_CHARACTER, self::METHOD_TYPES_ALLOWED_FOR_CHARACTERS);
 
         return $this->add("[$min-$max]");
+    }
+
+    /**
+     * Match anything but uppercase letter (between A to Z).
+     *
+     * @param string $min
+     * @param string $max
+     * @return Builder
+     */
+    public function notUppercaseLetter(string $min = 'A', string $max = 'Z') : self
+    {
+        return $this->notLetter($min, $max);
+    }
+    
+    /**
+     * Match anything but lowercase letter (between a to z).
+     *
+     * @param string $min
+     * @param string $max
+     * @return Builder
+     */
+    public function notLetter(string $min = 'a', string $max = 'z') : self
+    {
+        $this->validateAndAddMethodType(self::METHOD_TYPE_CHARACTER, self::METHOD_TYPES_ALLOWED_FOR_CHARACTERS);
+
+        return $this->add("[^$min-$max]");
     }
 
     /**********************************************************/
