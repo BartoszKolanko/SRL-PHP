@@ -17,7 +17,6 @@ use SRL\Exceptions\SyntaxException;
 use SRL\Interfaces\TestMethodProvider;
 
 /**
- * @method $this all() Apply the 'g' modifier
  * @method $this multiLine() Apply the 'm' modifier
  * @method $this singleLine() Apply the 's' modifier
  * @method $this caseInsensitive() Apply the 'i' modifier
@@ -34,10 +33,10 @@ use SRL\Interfaces\TestMethodProvider;
  * @method $this noWhitespace() Match any non-whitespace character.
  * @method $this anyCharacter() Match any word character.
  * @method $this noCharacter() Match any non-word character.
+ * @method $this backslash() Match a backslash (\).
  */
 class Builder extends TestMethodProvider
 {
-    const NON_LITERAL_CHARACTERS = '[\\^$.|?*+()';
     const METHOD_TYPE_BEGIN = 0b00001;
     const METHOD_TYPE_CHARACTER = 0b00010;
     const METHOD_TYPE_GROUP = 0b00100;
@@ -57,7 +56,6 @@ class Builder extends TestMethodProvider
 
     /** @var string[] Map method names to actual modifiers. */
     protected $modifierMapper = [
-        'all' => 'g',
         'multiLine' => 'm',
         'singleLine' => 's',
         'caseInsensitive' => 'i',
@@ -121,7 +119,12 @@ class Builder extends TestMethodProvider
             'add' => '\W',
             'type' => self::METHOD_TYPE_CHARACTER,
             'allowed' => self::METHOD_TYPES_ALLOWED_FOR_CHARACTERS
-        ]
+        ],
+        'backslash' => [
+            'add' => '\\\\',
+            'type' => self::METHOD_TYPE_CHARACTER,
+            'allowed' => self::METHOD_TYPES_ALLOWED_FOR_CHARACTERS
+        ],
     ];
 
     /** @var string Desired group, if any. */
@@ -165,10 +168,24 @@ class Builder extends TestMethodProvider
     {
         $this->validateAndAddMethodType(self::METHOD_TYPE_CHARACTER, self::METHOD_TYPES_ALLOWED_FOR_CHARACTERS);
 
-        $chars = implode('', array_map([$this, 'escape'], str_split($chars)));
-        $chars = str_replace(['-', ']'], ['\\-', '\\]'], $chars);
+        $chars = $this->escape($chars);
 
         return $this->add('[' . $chars . ']');
+    }
+
+    /**
+     * Literally match anything but one of these characters.
+     *
+     * @param string $chars
+     * @return Builder
+     */
+    public function notOneOf(string $chars)
+    {
+        $this->validateAndAddMethodType(self::METHOD_TYPE_CHARACTER, self::METHOD_TYPES_ALLOWED_FOR_CHARACTERS);
+
+        $chars = $this->escape($chars);
+
+        return $this->add('[^' . $chars . ']');
     }
 
     /**
@@ -181,7 +198,7 @@ class Builder extends TestMethodProvider
     {
         $this->validateAndAddMethodType(self::METHOD_TYPE_CHARACTER, self::METHOD_TYPES_ALLOWED_FOR_CHARACTERS);
 
-        return $this->add('(?:' . implode('', array_map([$this, 'escape'], str_split($chars))) . ')');
+        return $this->add('(?:' . $this->escape($chars) . ')');
     }
 
     /**
@@ -213,6 +230,20 @@ class Builder extends TestMethodProvider
     }
 
     /**
+     * Match anything but digit (in given span). Default will be a digit between 0 and 9.
+     *
+     * @param int $min
+     * @param int $max
+     * @return Builder
+     */
+    public function notDigit(int $min = 0, int $max = 9) : self
+    {
+        $this->validateAndAddMethodType(self::METHOD_TYPE_CHARACTER, self::METHOD_TYPES_ALLOWED_FOR_CHARACTERS);
+
+        return $this->add("[^$min-$max]");
+    }
+
+    /**
      * Match any uppercase letter (between A to Z).
      *
      * @param string $min
@@ -236,6 +267,32 @@ class Builder extends TestMethodProvider
         $this->validateAndAddMethodType(self::METHOD_TYPE_CHARACTER, self::METHOD_TYPES_ALLOWED_FOR_CHARACTERS);
 
         return $this->add("[$min-$max]");
+    }
+
+    /**
+     * Match anything but uppercase letter (between A to Z).
+     *
+     * @param string $min
+     * @param string $max
+     * @return Builder
+     */
+    public function notUppercaseLetter(string $min = 'A', string $max = 'Z') : self
+    {
+        return $this->notLetter($min, $max);
+    }
+
+    /**
+     * Match anything but lowercase letter (between a to z).
+     *
+     * @param string $min
+     * @param string $max
+     * @return Builder
+     */
+    public function notLetter(string $min = 'a', string $max = 'z') : self
+    {
+        $this->validateAndAddMethodType(self::METHOD_TYPE_CHARACTER, self::METHOD_TYPES_ALLOWED_FOR_CHARACTERS);
+
+        return $this->add("[^$min-$max]");
     }
 
     /**********************************************************/
@@ -509,14 +566,14 @@ class Builder extends TestMethodProvider
     /**********************************************************/
 
     /**
-     * Escape specific character.
+     * Escape all characters in string.
      *
-     * @param string $char
+     * @param string $chars
      * @return string
      */
-    protected function escape(string $char)
+    protected function escape(string $chars)
     {
-        return (strpos(static::NON_LITERAL_CHARACTERS, $char) !== false ? '\\' : '') . $char;
+        return preg_quote($chars);
     }
 
     /**
@@ -680,7 +737,7 @@ class Builder extends TestMethodProvider
         );
 
         if (!$ignoreInvalid && !$this->isValid($regEx)) {
-            throw new SyntaxException('Generated expression seems to be inalid.');
+            throw new SyntaxException('Generated expression seems to be invalid.');
         }
 
         return $regEx;
